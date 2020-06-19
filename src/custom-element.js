@@ -566,21 +566,33 @@ function createBaseCustomElementClass(win) {
 
     /**
      * Updates the layout box of the element.
+     * Should only be called by Resources.
      * @param {!./layout-rect.LayoutRectDef} layoutBox
-     * @param {boolean=} opt_measurementsChanged
+     * @param {boolean} sizeChanged
      */
-    updateLayoutBox(layoutBox, opt_measurementsChanged) {
+    updateLayoutBox(layoutBox, sizeChanged = false) {
       this.layoutWidth_ = layoutBox.width;
       this.layoutHeight_ = layoutBox.height;
       if (this.isBuilt()) {
-        try {
-          this.implementation_.onLayoutMeasure();
-          if (opt_measurementsChanged) {
-            this.implementation_.onMeasureChanged();
-          }
-        } catch (e) {
-          reportError(e, this);
+        this.onMeasure(sizeChanged);
+      }
+    }
+
+    /**
+     * Calls onLayoutMeasure() (and onMeasureChanged() if size changed)
+     * on the BaseElement implementation.
+     * Should only be called by Resources.
+     * @param {boolean} sizeChanged
+     */
+    onMeasure(sizeChanged = false) {
+      devAssert(this.isBuilt());
+      try {
+        this.implementation_.onLayoutMeasure();
+        if (sizeChanged) {
+          this.implementation_.onMeasureChanged();
         }
+      } catch (e) {
+        reportError(e, this);
       }
     }
 
@@ -811,7 +823,10 @@ function createBaseCustomElementClass(win) {
         this.everAttached = true;
 
         try {
-          this.layout_ = applyStaticLayout(this);
+          this.layout_ = applyStaticLayout(
+            this,
+            Services.platformFor(toWin(this.ownerDocument.defaultView)).isIe()
+          );
         } catch (e) {
           reportError(e, this);
         }
@@ -1514,7 +1529,7 @@ function createBaseCustomElementClass(win) {
       return dom.lastChildElement(this, (el) => {
         return (
           el.hasAttribute('placeholder') &&
-          // Blacklist elements that has a native placeholder property
+          // Denylist elements that has a native placeholder property
           // like input and textarea. These are not allowed to be AMP
           // placeholders.
           !isInputPlaceholder(el)
@@ -1614,7 +1629,7 @@ function createBaseCustomElementClass(win) {
       // 3. The element has already been laid out, and does not support reshowing the indicator (include having loading
       //    error);
       // 4. The element is too small or has not yet been measured;
-      // 5. The element has not been whitelisted;
+      // 5. The element has not been allowlisted;
       // 6. The element is an internal node (e.g. `placeholder` or `fallback`);
       // 7. The element's layout is not a size-defining layout.
       if (this.isInA4A()) {

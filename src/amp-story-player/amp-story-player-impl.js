@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
+import * as ampToolboxCacheUrl from '@ampproject/toolbox-cache-url';
 import {IframePool} from './amp-story-player-iframe-pool';
 import {Messaging} from '@ampproject/viewer-messaging';
 import {VisibilityState} from '../visibility-state';
 import {
   addParamsToUrl,
   getFragment,
+  isProxyOrigin,
   parseUrlWithA,
   removeFragment,
 } from '../url';
 import {applySandbox} from '../3p-frame';
+import {createCustomEvent} from '../event-helper';
 import {dict, map} from '../utils/object';
 // Source for this constant is css/amp-story-player-iframe.css
 import {cssText} from '../../build/amp-story-player-iframe.css';
@@ -43,6 +46,12 @@ const IframePosition = {
   CURRENT: 0,
   NEXT: 1,
 };
+
+/** @const @type {!Array<string>} */
+const SUPPORTED_CACHES = ['cdn.ampproject.org', 'www.bing-amp.com'];
+
+/** @const @type {!Array<string>} */
+const SANDBOX_MIN_LIST = ['allow-top-navigation'];
 
 /**
  * @enum {number}
@@ -102,6 +111,9 @@ export class AmpStoryPlayer {
     /** @private {boolean} */
     this.isLaidOut_ = false;
 
+    /** @private {boolean} */
+    this.isBuilt_ = false;
+
     /** @private {!IframePool} */
     this.iframePool_ = new IframePool();
 
@@ -121,6 +133,25 @@ export class AmpStoryPlayer {
       lastX: 0,
       isSwipeX: null,
     };
+
+    this.attachCallbacksToElement_();
+  }
+
+  /**
+   * Attaches callbacks to the DOM element for them to be used by publishers.
+   * @private
+   */
+  attachCallbacksToElement_() {
+    this.element_.load = this.load.bind(this);
+  }
+
+  /**
+   * External callback for manually loading the player.
+   * @public
+   */
+  load() {
+    this.buildCallback();
+    this.layoutCallback();
   }
 
   /**
@@ -133,10 +164,22 @@ export class AmpStoryPlayer {
 
   /** @public */
   buildCallback() {
+    if (this.isBuilt_) {
+      return;
+    }
+
     this.stories_ = toArray(this.element_.querySelectorAll('a'));
 
     this.initializeShadowRoot_();
     this.initializeIframes_();
+    this.signalReady_();
+    this.isBuilt_ = true;
+  }
+
+  /** @private */
+  signalReady_() {
+    this.element_.dispatchEvent(createCustomEvent(this.win_, 'ready', {}));
+    this.element_.isReady = true;
   }
 
   /** @private */
@@ -182,8 +225,33 @@ export class AmpStoryPlayer {
     this.iframes_.push(iframeEl);
 
     applySandbox(iframeEl);
+    this.addSandboxFlags_(iframeEl);
     this.initializeLoadingListeners_(iframeEl);
     this.rootEl_.appendChild(iframeEl);
+  }
+
+  /**
+   * @param {!Element} iframe
+   * @private
+   */
+  addSandboxFlags_(iframe) {
+    if (
+      !iframe.sandbox ||
+      !iframe.sandbox.supports ||
+      iframe.sandbox.length <= 0
+    ) {
+      return; // Can't feature detect support.
+    }
+
+    for (let i = 0; i < SANDBOX_MIN_LIST.length; i++) {
+      const flag = SANDBOX_MIN_LIST[i];
+
+      if (!iframe.sandbox.supports(flag)) {
+        throw new Error(`Iframe doesn't support: ${flag}`);
+      }
+
+      iframe.sandbox.add(flag);
+    }
   }
 
   /**
@@ -231,13 +299,13 @@ export class AmpStoryPlayer {
    * @private
    */
   initializeHandshake_(story, iframeEl) {
-    const frameOrigin = this.getEncodedLocation_(story.href).origin;
-
-    return Messaging.waitForHandshakeFromDocument(
-      this.win_,
-      iframeEl.contentWindow,
-      frameOrigin
-    );
+    return this.maybeGetCacheUrl_(story.href).then((url) => {
+      return Messaging.waitForHandshakeFromDocument(
+        this.win_,
+        iframeEl.contentWindow,
+        this.getEncodedLocation_(url).origin
+      );
+    });
   }
 
   /**
@@ -410,9 +478,36 @@ export class AmpStoryPlayer {
    * @private
    */
   layoutIframe_(story, iframe, visibilityState) {
-    const {href} = this.getEncodedLocation_(story.href, visibilityState);
+    this.maybeGetCacheUrl_(story.href).then((url) => {
+      const {href} = this.getEncodedLocation_(url, visibilityState);
+      iframe.setAttribute('src', href);
+    });
+  }
 
-    iframe.setAttribute('src', href);
+  /**
+   * Gets cache url, unless amp-cache is not defined.
+   * @param {string} url
+   * @return {!Promise<string>}
+   * @private
+   */
+  maybeGetCacheUrl_(url) {
+    const ampCache = this.element_.getAttribute('amp-cache');
+
+    if (!ampCache || isProxyOrigin(url)) {
+      return Promise.resolve(url);
+    }
+
+    if (!SUPPORTED_CACHES.includes(ampCache)) {
+      throw new Error(
+        `Unsupported cache, use one of following: ${SUPPORTED_CACHES}`
+      );
+    }
+
+    return ampToolboxCacheUrl
+      .createCacheUrl(ampCache, url, 'viewer' /** servingType */)
+      .then((cacheUrl) => {
+        return cacheUrl;
+      });
   }
 
   /**
@@ -423,13 +518,10 @@ export class AmpStoryPlayer {
    * @private
    */
   getEncodedLocation_(href, visibilityState = VisibilityState.INACTIVE) {
-    const {location} = this.win_;
-    const url = parseUrlWithA(this.cachedA_, location.href);
-
     const params = dict({
       'amp_js_v': '0.1',
       'visibilityState': visibilityState,
-      'origin': url.origin,
+      'origin': this.win_.origin,
       'showStoryUrlInfo': '0',
       'storyPlayer': 'v0',
       'cap': 'swipe',

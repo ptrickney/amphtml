@@ -71,6 +71,50 @@ describes.realWin('Events', {amp: 1}, (env) => {
     target2.appendChild(child2);
   });
 
+  describe('AnalyticsEvent', () => {
+    it('should handle data-vars', () => {
+      let analyticsEvent = new AnalyticsEvent(target, 'custom-event', {
+        'var': 'test',
+      });
+      expect(analyticsEvent.vars).to.deep.equal({
+        'var': 'test',
+      });
+
+      target.setAttribute('data-params-test-param', 'error');
+      target.setAttribute('data-vars-test-var', 'default');
+      analyticsEvent = new AnalyticsEvent(target, 'custom-event');
+      expect(analyticsEvent.vars).to.deep.equal({
+        'testVar': 'default',
+      });
+
+      analyticsEvent = new AnalyticsEvent(
+        target,
+        'custom-event',
+        {
+          'var': 'test',
+        },
+        false
+      );
+      expect(analyticsEvent.vars).to.deep.equal({
+        'var': 'test',
+      });
+    });
+
+    it('event vars should override data-vars', () => {
+      target.setAttribute('data-vars-test-var', 'error');
+      target.setAttribute('data-vars-test-var1', 'test1');
+      const analyticsEvent = new AnalyticsEvent(target, 'custom-event', {
+        'testVar': 'override',
+        'someVar': 'test',
+      });
+      expect(analyticsEvent.vars).to.deep.equal({
+        'testVar': 'override',
+        'testVar1': 'test1',
+        'someVar': 'test',
+      });
+    });
+  });
+
   describe('AnalyticsEventType', () => {
     it('should match TRACKER_TYPES', () => {
       const analyticsEventTypes = Object.values(AnalyticsEventType);
@@ -1965,6 +2009,9 @@ describes.realWin('Events', {amp: 1}, (env) => {
           targetSignals2 = new Signals();
           target2.signals = () => targetSignals2;
 
+          target.setAttribute('data-vars-id', '123');
+          target2.setAttribute('data-vars-id', '123');
+
           saveCallback2 = env.sandbox.match((arg) => {
             if (typeof arg == 'function') {
               saveCallback2.callback = arg;
@@ -2049,12 +2096,14 @@ describes.realWin('Events', {amp: 1}, (env) => {
           expect(eventsSpy.getCall(0).args[2]).to.equal(target);
           expect(eventsSpy.getCall(0).args[3]).to.deep.equal({
             totalVisibleTime: 10,
+            id: '123',
           });
           expect(eventsSpy.getCall(1).args[0]).to.equal('visible');
           expect(eventsSpy.getCall(1).args[1]).to.equal(eventResolver);
           expect(eventsSpy.getCall(1).args[2]).to.equal(target2);
           expect(eventsSpy.getCall(1).args[3]).to.deep.equal({
             totalVisibleTime: 15,
+            id: '123',
           });
         });
 

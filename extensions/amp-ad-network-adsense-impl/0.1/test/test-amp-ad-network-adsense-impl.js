@@ -54,7 +54,6 @@ describes.realWin(
   {
     amp: {
       extensions: ['amp-ad', 'amp-ad-network-adsense-impl'],
-      // runtimeOn: true,
     },
   },
   (env) => {
@@ -476,7 +475,7 @@ describes.realWin(
           'enableAutoAdSize': '1',
         };
 
-        win.postMessage(data, '*');
+        win.postMessage(JSON.stringify(data), '*');
 
         await savePromise;
 
@@ -692,7 +691,7 @@ describes.realWin(
             /(\?|&)ady=-?\d+(&|$)/,
             /(\?|&)u_aw=\d+(&|$)/,
             /(\?|&)u_ah=\d+(&|$)/,
-            /(\?|&)u_cd=24(&|$)/,
+            /(\?|&)u_cd=(24|30)(&|$)/,
             /(\?|&)u_w=\d+(&|$)/,
             /(\?|&)u_h=\d+(&|$)/,
             /(\?|&)u_tz=-?\d+(&|$)/,
@@ -836,31 +835,60 @@ describes.realWin(
       });
 
       it('should return empty string if unknown consentState', () =>
-        expect(impl.getAdUrl(CONSENT_POLICY_STATE.UNKNOWN)).to.eventually.equal(
-          ''
-        ));
+        expect(
+          impl.getAdUrl({consentState: CONSENT_POLICY_STATE.UNKNOWN})
+        ).to.eventually.equal(''));
 
       it('should include npa=1 if unknown consent & explicit npa', () => {
         impl.element.setAttribute('data-npa-on-unknown-consent', 'true');
-        return impl.getAdUrl(CONSENT_POLICY_STATE.UNKNOWN).then((url) => {
-          expect(url).to.match(/(\?|&)npa=1(&|$)/);
-        });
+        return impl
+          .getAdUrl({consentState: CONSENT_POLICY_STATE.UNKNOWN})
+          .then((url) => {
+            expect(url).to.match(/(\?|&)npa=1(&|$)/);
+          });
       });
 
       it('should include npa=1 if insufficient consent', () =>
-        impl.getAdUrl(CONSENT_POLICY_STATE.INSUFFICIENT).then((url) => {
-          expect(url).to.match(/(\?|&)npa=1(&|$)/);
-        }));
+        impl
+          .getAdUrl({consentState: CONSENT_POLICY_STATE.INSUFFICIENT})
+          .then((url) => {
+            expect(url).to.match(/(\?|&)npa=1(&|$)/);
+          }));
 
       it('should not include not npa, if sufficient consent', () =>
-        impl.getAdUrl(CONSENT_POLICY_STATE.SUFFICIENT).then((url) => {
-          expect(url).to.not.match(/(\?|&)npa=(&|$)/);
-        }));
+        impl
+          .getAdUrl({consentState: CONSENT_POLICY_STATE.SUFFICIENT})
+          .then((url) => {
+            expect(url).to.not.match(/(\?|&)npa=(&|$)/);
+          }));
 
       it('should not include npa, if not required consent', () =>
-        impl.getAdUrl(CONSENT_POLICY_STATE.UNKNOWN_NOT_REQUIRED).then((url) => {
-          expect(url).to.not.match(/(\?|&)npa=(&|$)/);
+        impl
+          .getAdUrl({consentState: CONSENT_POLICY_STATE.UNKNOWN_NOT_REQUIRED})
+          .then((url) => {
+            expect(url).to.not.match(/(\?|&)npa=(&|$)/);
+          }));
+
+      it('should include gdpr_consent, if TC String is provided', () =>
+        impl.getAdUrl({consentString: 'tcstring'}).then((url) => {
+          expect(url).to.match(/(\?|&)gdpr_consent=tcstring(&|$)/);
         }));
+
+      it('should include gdpr=1, if gdprApplies is true', () =>
+        impl.getAdUrl({gdprApplies: true}).then((url) => {
+          expect(url).to.match(/(\?|&)gdpr=1(&|$)/);
+        }));
+
+      it('should include gdpr=0, if gdprApplies is false', () =>
+        impl.getAdUrl({gdprApplies: false}).then((url) => {
+          expect(url).to.match(/(\?|&)gdpr=0(&|$)/);
+        }));
+
+      it('should not include gdpr, if gdprApplies is missing', () =>
+        impl.getAdUrl({}).then((url) => {
+          expect(url).to.not.match(/(\?|&)gdpr=(&|$)/);
+        }));
+
       it('should have spsa and size 1x1 when single page story ad', () => {
         impl.isSinglePageStoryAd = true;
         return impl.getAdUrl().then((url) => {

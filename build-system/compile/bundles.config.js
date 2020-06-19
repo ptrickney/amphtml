@@ -15,8 +15,10 @@
  */
 'use strict';
 
+const argv = require('minimist')(process.argv.slice(2));
 const colors = require('ansi-colors');
 const log = require('fancy-log');
+const wrappers = require('./compile-wrappers');
 
 const {VERSION: internalRuntimeVersion} = require('./internal-version');
 
@@ -172,6 +174,9 @@ exports.jsBundles = {
     options: {
       minifiedName: 'v0.js',
       includePolyfills: true,
+      wrapper: wrappers.mainBinary,
+      esmPassCompilation: argv.esm,
+      includeOnlyESMLevelPolyfills: argv.esm,
     },
   },
   'amp-shadow.js': {
@@ -464,7 +469,7 @@ exports.extensionBundles = [
   },
   {
     name: 'amp-date-display',
-    version: ['0.1', '0.2'],
+    version: ['0.1', '1.0'],
     latestVersion: '0.1',
     type: TYPES.MISC,
   },
@@ -521,6 +526,12 @@ exports.extensionBundles = [
     version: '0.1',
     latestVersion: '0.1',
     options: {hasCss: true},
+    type: TYPES.MISC,
+  },
+  {
+    name: 'amp-fit-text',
+    version: '1.0',
+    latestVersion: '0.1',
     type: TYPES.MISC,
   },
   {
@@ -854,26 +865,6 @@ exports.extensionBundles = [
   },
   {
     name: 'amp-story',
-    version: '0.1',
-    latestVersion: '1.0',
-    options: {
-      hasCss: true,
-      cssBinaries: [
-        'amp-story-bookend',
-        'amp-story-consent',
-        'amp-story-hint',
-        'amp-story-unsupported-browser-layer',
-        'amp-story-viewport-warning-layer',
-        'amp-story-info-dialog',
-        'amp-story-share',
-        'amp-story-share-menu',
-        'amp-story-system-layer',
-      ],
-    },
-    type: TYPES.MISC,
-  },
-  {
-    name: 'amp-story',
     version: '1.0',
     latestVersion: '1.0',
     options: {
@@ -884,7 +875,9 @@ exports.extensionBundles = [
         'amp-story-draggable-drawer-header',
         'amp-story-hint',
         'amp-story-info-dialog',
-        'amp-story-quiz',
+        'amp-story-interactive',
+        'amp-story-interactive-poll',
+        'amp-story-interactive-quiz',
         'amp-story-share',
         'amp-story-share-menu',
         'amp-story-system-layer',
@@ -924,7 +917,7 @@ exports.extensionBundles = [
   },
   {
     name: 'amp-selector',
-    version: '0.1',
+    version: ['0.1', '1.0'],
     latestVersion: '0.1',
     options: {hasCss: true},
     type: TYPES.MISC,
@@ -1016,13 +1009,13 @@ exports.extensionBundles = [
   },
   {
     name: 'amp-social-share',
-    version: '0.2',
+    version: '1.0',
     latestVersion: '0.1',
     type: TYPES.MISC,
   },
   {
     name: 'amp-timeago',
-    version: ['0.1', '0.2'],
+    version: ['0.1', '1.0'],
     latestVersion: '0.1',
     type: TYPES.MISC,
   },
@@ -1171,7 +1164,7 @@ exports.extensionBundles = [
     latestVersion: '0.1',
     type: TYPES.MEDIA,
   },
-];
+].sort((a, b) => a.name.localeCompare(b.name));
 
 /**
  * Used to alias a version of an extension to an older deprecated version.
@@ -1181,25 +1174,11 @@ exports.extensionAliasBundles = {
     version: '1.0',
     aliasedVersion: '0.1',
   },
+  'amp-story': {
+    version: '1.0',
+    aliasedVersion: '0.1',
+  },
 };
-
-/**
- * Used to generate alternative JS build targets
- */
-exports.altMainBundles = [
-  {
-    path: 'src/amp-shadow.js',
-    name: 'shadow-v0',
-    version: '0.1',
-    latestVersion: '0.1',
-  },
-  {
-    path: 'src/inabox/amp-inabox.js',
-    name: 'amp4ads-v0',
-    version: '0.1',
-    latestVersion: '0.1',
-  },
-];
 
 /**
  * @param {boolean} condition

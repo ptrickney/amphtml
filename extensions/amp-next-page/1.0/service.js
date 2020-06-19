@@ -227,16 +227,37 @@ export class NextPageService {
       this.setLastFetchedPage(this.hostPage_);
     }
 
-    this.initializePageQueue_().finally(() => {
+    const fin = () => {
       // Render the initial recommendation box template with all pages
       this.refreshRecBox_();
       // Mark the page as ready
       this.readyResolver_();
-    });
+    };
+    this.whenFirstScroll_()
+      .then(() => this.initializePageQueue_())
+      .then(fin, fin);
 
     this.getHost_().classList.add(NEXT_PAGE_CLASS);
 
     return this.readyPromise_;
+  }
+
+  /**
+   * Resolve when the document scrolls for the first time or loads in
+   * scrolled position.
+   * @return {!Promise}
+   * @private
+   */
+  whenFirstScroll_() {
+    return new Promise((resolve) => {
+      if (this.viewport_.getScrollTop() != 0) {
+        return resolve();
+      }
+      const unlisten = this.viewport_.onScroll(() => {
+        resolve();
+        unlisten();
+      });
+    });
   }
 
   /**
@@ -277,9 +298,16 @@ export class NextPageService {
             this.setLastFetchedPage(nextPage);
           }
         })
-        .finally(() => {
-          return this.refreshRecBox_();
-        });
+        .then(
+          () => {
+            return this.refreshRecBox_();
+          },
+          (reason) => {
+            return this.refreshRecBox_().then(() => {
+              throw reason;
+            });
+          }
+        );
     }
 
     // Attempt to get more pages
@@ -449,7 +477,8 @@ export class NextPageService {
       /** @type {!JsonObject} */ ({
         'title': title,
         'url': url,
-      })
+      }),
+      /** enableDataVars */ false
     );
   }
 
@@ -529,7 +558,7 @@ export class NextPageService {
     // If the user already scrolled to the bottom, prevent rendering
     if (this.getViewportsAway_() < NEAR_BOTTOM_VIEWPORT_COUNT && !force) {
       // TODO(wassgha): Append a "load next article" button?
-      return Promise.resolve();
+      return Promise.resolve(null);
     }
 
     const container = dev().assertElement(page.container);
@@ -588,7 +617,7 @@ export class NextPageService {
       return separatorPromise.then(() => amp);
     } catch (e) {
       dev().error(TAG, 'failed to attach shadow document for page', e);
-      return Promise.resolve();
+      return Promise.resolve(null);
     }
   }
 
@@ -1044,7 +1073,8 @@ export class NextPageService {
           /** @type {!JsonObject} */ ({
             'title': page.title,
             'url': page.url,
-          })
+          }),
+          /** enableDataVars */ false
         );
         const a2a = this.navigation_.navigateToAmpUrl(
           page.url,

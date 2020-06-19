@@ -87,7 +87,6 @@ import {
   FakeWindow,
   interceptEventListeners,
 } from './fake-dom';
-import {RequestBank, stubService} from './test-helper';
 import {Services} from '../src/services';
 import {addParamsToUrl} from '../src/url';
 import {adopt, adoptShadowMode} from '../src/runtime';
@@ -101,6 +100,7 @@ import {
   installBuiltinElements,
   installRuntimeServices,
 } from '../src/service/core-services';
+import {stubService} from './test-helper';
 
 import {install as installCustomElements} from '../src/polyfills/custom-elements';
 import {installDocService} from '../src/service/ampdoc-impl';
@@ -197,6 +197,7 @@ export const fakeWin = describeEnv((spec) => [
  * @param {string} name
  * @param {{
  *   fakeRegisterElement: (boolean|undefined),
+ *   skipCustomElementsPolyfill: (boolean|undefined),
  *   amp: (boolean|!AmpTestSpec|undefined),
  * }} spec
  * @param {function({
@@ -550,7 +551,6 @@ class IntegrationFixture {
     if (env.iframe.parentNode) {
       env.iframe.parentNode.removeChild(env.iframe);
     }
-    return RequestBank.tearDown();
   }
 }
 
@@ -648,7 +648,7 @@ class RealWinFixture {
           Object.defineProperty(win, 'customElements', {
             get: () => customElements,
           });
-        } else {
+        } else if (!spec.skipCustomElementsPolyfill) {
           // The anonymous class parameter allows us to detect native classes
           // vs transpiled classes.
           installCustomElements(win, class {});

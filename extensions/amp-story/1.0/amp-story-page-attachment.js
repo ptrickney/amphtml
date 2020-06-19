@@ -16,7 +16,7 @@
 
 import {Action, StateProperty} from './amp-story-store-service';
 import {DraggableDrawer, DrawerState} from './amp-story-draggable-drawer';
-import {HistoryState, setHistoryState} from './utils';
+import {HistoryState, setHistoryState} from './history';
 import {Services} from '../../../src/services';
 import {StoryAnalyticsEvent, getAnalyticsService} from './story-analytics';
 import {closest, removeElement} from '../../../src/dom';
@@ -206,6 +206,16 @@ export class AmpStoryPageAttachment extends DraggableDrawer {
       },
       true /** useCapture */
     );
+
+    // Closes the remote attachment drawer when navigation deeplinked to an app.
+    if (this.type_ === AttachmentType.REMOTE) {
+      const ampdoc = this.getAmpDoc();
+      ampdoc.onVisibilityChanged(() => {
+        if (ampdoc.isVisible() && this.state_ === DrawerState.OPEN) {
+          this.closeInternal_(false /** shouldAnimate */);
+        }
+      });
+    }
   }
 
   /**
