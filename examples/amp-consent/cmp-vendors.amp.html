@@ -100,6 +100,7 @@
           <option>sirdata</option>
           <option>Marfeel</option>
           <option>Ogury</option>
+          <option>OneTrust</option>
           <option>opencmp</option>
           <option>SourcePoint</option>
           <option>Usercentrics</option>
@@ -122,7 +123,7 @@
 
       <!-- This should be in alphabetical order. _ping_ should be the first -->
 
-      <!-- _ping_ example -->
+      <!-- _ping_ example 
       <amp-consent id='ABC' layout='nodisplay' type='_ping_'>
         <script type="application/json">
           {
@@ -141,7 +142,7 @@
       </amp-consent>
       <!-- End _ping_ example -->
 
-      <!-- appconsent example -->
+      <!-- appconsent example 
       <amp-consent id='ABC' layout='nodisplay' type='appconsent'>
         <script type="application/json">
           {
@@ -158,7 +159,7 @@
       </amp-consent>
       <!-- End appconsent example -->
 
-      <!-- didomi example -->
+      <!-- didomi example 
       <amp-consent id='didomi' layout='nodisplay' type='didomi'>
           <script type="application/json">
             {
@@ -186,7 +187,7 @@
         </amp-consent>
         <!-- End didomi example -->
 
-      <!-- sirdata example -->
+      <!-- sirdata example 
       <amp-consent id="consent" layout="nodisplay" type="sirdata">
         <script type="application/json">
           {
@@ -207,7 +208,7 @@
       </amp-consent>
       <!-- End sirdata example -->
 
-      <!-- Marfeel example -->
+      <!-- Marfeel example 
       <amp-consent id='marfeelConsent' layout='nodisplay' type='Marfeel'>
         <script type="application/json">
           {
@@ -225,7 +226,7 @@
       </amp-consent>
       <!-- End Marfeel example -->
 
-      <!-- Ogury example -->
+      <!-- Ogury example 
       <amp-consent id='ogury' layout='nodisplay' type='Ogury'>
         <script type="application/json">
           {
@@ -247,7 +248,27 @@
       </amp-consent>
       <!-- End Ogury example -->
 
-      <!-- opencmp example -->
+      <!-- OneTrust example -->
+      <amp-consent id='consent' layout='nodisplay' type='onetrust'>
+        <script type="application/json">
+          {
+            "postPromptUI": "onetrust-consent-prompt-ui",
+            "clientConfig": {
+              "CMP_id": "731b489e-8c26-4f86-a806-926a6d2e7e6f",
+              "IAB_TCF": "true",
+              "Env": "App",
+              "Opt_Out": "targ"
+            }
+          }
+        </script>
+        <div id="onetrust-consent-prompt-ui">
+          Post Prompt UI
+          <button on="tap:consent.prompt(consent=onetrust)" role="button">Privacy Settings</button>
+        </div>
+      </amp-consent>
+      <!-- End OneTrust example -->
+
+      <!-- opencmp example 
       <amp-consent id='consent' layout='nodisplay' type='opencmp'>
         <script type="application/json">
           {
@@ -262,7 +283,7 @@
       </amp-consent>
       <!-- End opencmp example -->
 
-      <!-- SourcePoint example -->
+      <!-- SourcePoint example 
       <amp-consent id='consent' layout='nodisplay' type='SourcePoint'>
         <script type="application/json">
           {
@@ -287,7 +308,7 @@
       </amp-consent>
       <!-- End SourcePoint example -->
 
-      <!-- Usercentrics example -->
+      <!-- Usercentrics example 
       <amp-consent id='consent' layout='nodisplay' type='Usercentrics'>
         <script type="application/json">
           {
