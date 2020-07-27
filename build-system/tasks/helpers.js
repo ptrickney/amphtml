@@ -174,6 +174,7 @@ async function compileAllJs(options) {
     doBuildJs(jsBundles, 'recaptcha.js', options),
     doBuildJs(jsBundles, 'amp-viewer-host.max.js', options),
     doBuildJs(jsBundles, 'video-iframe-integration.js', options),
+    doBuildJs(jsBundles, 'amp-story-entry-point.js', options),
     doBuildJs(jsBundles, 'amp-story-player.js', options),
     doBuildJs(jsBundles, 'amp-inabox-host.js', options),
     doBuildJs(jsBundles, 'amp-shadow.js', options),
@@ -286,7 +287,8 @@ async function compileMinifiedJs(srcDir, srcFilename, destDir, options) {
       );
     }
   }
-  await doCompileMinifiedJs(options.continueOnError);
+
+  return doCompileMinifiedJs(options.continueOnError);
 }
 
 /**
@@ -456,9 +458,9 @@ async function compileTs(srcDir, srcFilename, destDir, options) {
 async function compileJs(srcDir, srcFilename, destDir, options) {
   options = options || {};
   if (options.minify) {
-    return await compileMinifiedJs(srcDir, srcFilename, destDir, options);
+    return compileMinifiedJs(srcDir, srcFilename, destDir, options);
   } else {
-    return await compileUnminifiedJs(srcDir, srcFilename, destDir, options);
+    return compileUnminifiedJs(srcDir, srcFilename, destDir, options);
   }
 }
 
