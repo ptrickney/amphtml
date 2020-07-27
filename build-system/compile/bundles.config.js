@@ -145,6 +145,16 @@ exports.jsBundles = {
       includePolyfills: false,
     },
   },
+  'amp-story-entry-point.js': {
+    srcDir: './src/amp-story-player/amp-story-entry-point/',
+    srcFilename: 'amp-story-entry-point.js',
+    destDir: './dist',
+    minifiedDestDir: './dist',
+    options: {
+      minifiedName: 'amp-story-entry-point-v0.js',
+      includePolyfills: false,
+    },
+  },
   'amp-story-player.js': {
     srcDir: './src/amp-story-player/',
     srcFilename: 'amp-story-player.js',
@@ -870,8 +880,10 @@ exports.extensionBundles = [
         'amp-story-hint',
         'amp-story-info-dialog',
         'amp-story-interactive',
+        'amp-story-interactive-binary-poll',
         'amp-story-interactive-poll',
         'amp-story-interactive-quiz',
+        'amp-story-interactive-results',
         'amp-story-share',
         'amp-story-share-menu',
         'amp-story-system-layer',
@@ -880,6 +892,13 @@ exports.extensionBundles = [
         'amp-story-viewport-warning-layer',
       ],
     },
+    type: TYPES.MISC,
+  },
+  {
+    name: 'amp-story-360',
+    version: '0.1',
+    latestVersion: '0.1',
+    options: {hasCss: true},
     type: TYPES.MISC,
   },
   {
@@ -897,6 +916,13 @@ exports.extensionBundles = [
   },
   {
     name: 'amp-story-education',
+    version: '0.1',
+    latestVersion: '0.1',
+    options: {hasCss: true},
+    type: TYPES.MISC,
+  },
+  {
+    name: 'amp-story-player',
     version: '0.1',
     latestVersion: '0.1',
     options: {hasCss: true},
@@ -1005,6 +1031,7 @@ exports.extensionBundles = [
     name: 'amp-social-share',
     version: '1.0',
     latestVersion: '0.1',
+    options: {hasCss: true},
     type: TYPES.MISC,
   },
   {
